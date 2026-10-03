@@ -1,0 +1,34 @@
+# 原稿サイトを GitHub 側で生成して公開する。
+# - push 時（原稿の追加・修正）
+# - 毎時5分（公開時刻を過ぎた原稿をトップページの一覧に載せるため。21:00公開なら21:05ごろ反映）
+name: build-and-deploy
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python build.py
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
